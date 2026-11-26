@@ -27,7 +27,6 @@ Architecture BDD:
    ```
 
 ## Modélisation de la base de données
-
 ```mermaid
 erDiagram
     %% ==========================================
@@ -82,19 +81,19 @@ erDiagram
         ENUM status "invited, accepted, declined"
     }
 
-    USERS ||--o{ GROUP_MEMBERS : "rejoint"
-    GROUPS ||--|{ GROUP_MEMBERS : "contient"
-    GROUPS |o--o{ EVENTS : "heberge"
-    USERS ||--o{ EVENT_PARTICIPANTS : "participe"
-    EVENTS ||--|{ EVENT_PARTICIPANTS : "inclut"
+    USERS ||--o{ GROUP_MEMBERS : rejoint
+    GROUPS ||--|{ GROUP_MEMBERS : contient
+    GROUPS |o--o{ EVENTS : heberge
+    USERS ||--o{ EVENT_PARTICIPANTS : participe
+    EVENTS ||--|{ EVENT_PARTICIPANTS : inclut
 
     %% ==========================================
     %% INTERACTIONS : DISCUSSIONS, PHOTOS, SONDAGES
     %% ==========================================
     THREADS {
         INT id PK
-        INT group_id FK "nullable (XOR)"
-        INT event_id FK "nullable (XOR)"
+        INT group_id FK "nullable XOR"
+        INT event_id FK "nullable XOR"
         DATETIME created_at
     }
 
@@ -114,12 +113,12 @@ erDiagram
         DATETIME created_at
     }
 
-    GROUPS |o--o{ THREADS : "possede (XOR)"
-    EVENTS |o--o{ THREADS : "possede (XOR)"
-    THREADS ||--o{ MESSAGES : "contient"
-    USERS ||--o{ MESSAGES : "publie"
-    MESSAGES ||--o{ MESSAGE_COMMENTS : "recoit"
-    USERS ||--o{ MESSAGE_COMMENTS : "commente"
+    GROUPS |o--o{ THREADS : possede_XOR
+    EVENTS |o--o{ THREADS : possede_XOR
+    THREADS ||--o{ MESSAGES : contient
+    USERS ||--o{ MESSAGES : publie
+    MESSAGES ||--o{ MESSAGE_COMMENTS : recoit
+    USERS ||--o{ MESSAGE_COMMENTS : commente
 
     PHOTO_ALBUMS {
         INT id PK
@@ -145,6 +144,93 @@ erDiagram
         DATETIME created_at
     }
 
-    EVENTS ||--o{ PHOTO_ALBUMS : "possede"
-    PHOTO_ALBUMS ||--o{ PHOTOS : "contient"
-    USERS ||--o{ PHOTOS : "poste
+    EVENTS ||--o{ PHOTO_ALBUMS : possede
+    PHOTO_ALBUMS ||--o{ PHOTOS : contient
+    USERS ||--o{ PHOTOS : poste
+    PHOTOS ||--o{ PHOTO_COMMENTS : recoit
+    USERS ||--o{ PHOTO_COMMENTS : commente
+
+    POLLS {
+        INT id PK
+        INT event_id FK
+        INT creator_id FK
+        VARCHAR title
+        DATETIME created_at
+    }
+
+    POLL_QUESTIONS {
+        INT id PK
+        INT poll_id FK
+        VARCHAR question_text
+    }
+
+    POLL_OPTIONS {
+        INT id PK
+        INT question_id FK
+        VARCHAR option_text
+    }
+
+    POLL_VOTES {
+        INT id PK
+        INT question_id FK "UK avec user_id"
+        INT option_id FK
+        INT user_id FK "UK avec question_id"
+        DATETIME voted_at
+    }
+
+    EVENTS ||--o{ POLLS : contient
+    USERS ||--o{ POLLS : cree
+    POLLS ||--|{ POLL_QUESTIONS : comporte
+    POLL_QUESTIONS ||--|{ POLL_OPTIONS : propose
+    POLL_QUESTIONS ||--o{ POLL_VOTES : recoit
+    POLL_OPTIONS ||--o{ POLL_VOTES : est_choisie
+    USERS ||--o{ POLL_VOTES : vote
+
+    %% ==========================================
+    %% MODULES METIER : BILLETTERIE, SHOPPING, COVOITURAGE
+    %% ==========================================
+    TICKET_TYPES {
+        INT id PK
+        INT event_id FK
+        VARCHAR name
+        DECIMAL price
+        INT max_quantity
+    }
+
+    TICKETS {
+        INT id PK
+        INT ticket_type_id FK
+        VARCHAR buyer_firstname
+        VARCHAR buyer_lastname
+        TEXT buyer_address
+        VARCHAR buyer_email
+        DATETIME purchased_at
+    }
+
+    SHOPPING_ITEMS {
+        INT id PK
+        INT event_id FK "UK avec name"
+        INT user_id FK
+        VARCHAR name "UK avec event_id"
+        INT quantity
+        TIME arrival_time
+    }
+
+    CARPOOLS {
+        INT id PK
+        INT event_id FK
+        INT driver_id FK
+        VARCHAR departure_location
+        DATETIME departure_time
+        DECIMAL price
+        INT available_seats
+        INT max_detour_minutes
+    }
+
+    EVENTS ||--o{ TICKET_TYPES : propose
+    TICKET_TYPES ||--o{ TICKETS : genere
+    EVENTS ||--o{ SHOPPING_ITEMS : liste
+    USERS ||--o{ SHOPPING_ITEMS : apporte
+    EVENTS ||--o{ CARPOOLS : organise
+    USERS ||--o{ CARPOOLS : conduit
+```
