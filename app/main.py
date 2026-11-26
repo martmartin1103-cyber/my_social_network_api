@@ -18,3 +18,14 @@ app.include_router(users.router)
 @app.get("/api/health", tags=["Système"])
 def health_check():
     return {"status": "ok", "message": "L'API fonctionne parfaitement"}
+
+from app.routers import users, groups
+# ...
+app.include_router(users.router)
+app.include_router(groups.router)
+
+from app.routers import users, groups, events
+# ...
+app.include_router(users.router)
+app.include_router(groups.router)
+app.include_router(events.router)
