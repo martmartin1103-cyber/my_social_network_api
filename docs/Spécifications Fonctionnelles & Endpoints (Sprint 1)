@@ -1,0 +1,80 @@
+# Spécifications Fonctionnelles & Endpoints (Sprint 0 / Sprint 1)
+
+## 1. Besoins fonctionnels (Cahier des charges)
+
+### 1.1 Avant l'événement
+Chaque organisateur doit pouvoir créer un événement simplement et rapidement, en suivant un parcours guidé en trois étapes.
+* **Étape 1 : Configuration de l'événement**
+  * **Nom** : titre de l'événement.
+  * **Description** : présentation (programme, objectif, informations pratiques).
+  * **Date de début** et **Date de fin** : dates et heures de début et de fin.
+  * **Lieu** : adresse ou endroit où se déroule l'événement.
+  * **Photo de couverture** : image illustrant l'événement.
+  * **Visibilité** : `public` (visible par tous) ou `privé` (uniquement sur invitation).
+  * **Organisateurs et membres** : liste des personnes qui gèrent l'événement et de celles qui y participent.
+
+### 1.2 Les groupes
+* Création d'un groupe `public`, `privé` ou `secret`.
+* Création d'événements simplifiée au sein d'un groupe avec **invitation automatique de tous les membres en un clic**.
+* Pour un groupe `public`, possibilité pour les organisateurs de partager les événements sur d'autres réseaux sociaux.
+* Mise à disposition d'un **fil de discussion** au sein de chaque groupe.
+* **Paramètres d'un groupe** :
+  * Nom, Description, Icône, Photo de couverture.
+  * Type de groupe (`public`, `privé`, `secret`).
+  * Autorisation pour les membres de publier dans le groupe.
+  * Autorisation pour les membres de créer des événements dans le groupe.
+
+### 2. Spécifications techniques (CRUDS)
+* **2.1 Utilisateurs (CRUDS)** : définition des attributs d'un utilisateur ; **unicité stricte de l'email** (pas deux utilisateurs avec le même email).
+* **2.2 Événements (CRUDS)** : multitude de participants ; géré par **1 ou plusieurs organisateurs**.
+* **2.3 Groupes (CRUDS)** : **1 ou plusieurs membres** ; géré par **1 ou plusieurs administrateurs**.
+* **2.4 Fils de discussion (CRUDS)** : lié à **1 groupe OU 1 événement mais pas les deux (XOR)** ; contient 0 ou plusieurs messages créés par un membre, administrateur ou organisateur ; chaque membre/participant peut commenter un message.
+* **2.5 Albums photo (CRUDS)** : associé à 1 événement ; contient 0 ou plusieurs photos postées par 1 participant ; chaque photo peut être commentée par 0 ou plusieurs participants.
+* **2.6 Sondages (CRUDS)** : 0 ou plusieurs sondages par événement créés par un organisateur ; comporte 1 ou plusieurs questions ; plusieurs réponses possibles par question mais **uniquement 1 réponse choisie par participant**.
+* **2.7 Billetterie (CRUDS)** : disponible sur certains événements **publics** ; l'organisateur crée 1 ou plusieurs types de billets (`nom`, `montant`, `quantité limitée`) ; **1 seul billet max** par personne extérieure ; chaque billet acheté enregistre le type de billet, le nom, prénom, adresse complète et date d'achat.
+* **2.8 Shopping list (CRUDS)** : activable par événement ; un utilisateur indique ce qu'il apporte (`nom`, `quantité`, `heure d'arrivée`) ; **chaque élément apporté doit être unique par événement**.
+* **3. Covoiturage (CRUDS — Bonus)** : activable par événement ; un utilisateur propose un trajet (`lieu de départ`, `heure de départ`, `prix proposé`, `nombre de places disponibles`, `temps maximum d'écart`).
+
+---
+
+## 2. Endpoints & URLs corrigés (Base : `/api/v1`)
+
+### Système
+| Action | Méthode | URL | Codes HTTP | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| Health check | `GET` | `/api/health` | `200` | Vérifie que le serveur API est en ligne |
+
+### Utilisateurs (`/users`)
+| Action | Méthode | URL | Codes HTTP | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| Recherche | `GET` | `/api/v1/users?q={terme}` | `200` | Recherche des utilisateurs par nom, prénom ou email |
+| Détails | `GET` | `/api/v1/users/{user_id}` | `200`, `404` | Récupère les détails d'un utilisateur |
+| Création | `POST` | `/api/v1/users` | `201`, `400`, `409` | Crée un utilisateur (`409` si l'email existe déjà) |
+| Modification | `PUT` | `/api/v1/users/{user_id}` | `200`, `400`, `404` | Met à jour les informations d'un utilisateur |
+| Suppression | `DELETE` | `/api/v1/users/{user_id}` | `204`, `404` | Supprime un utilisateur |
+| Événements d'un user | `GET` | `/api/v1/users/{user_id}/events` | `200`, `404` | Liste tous les événements liés à un utilisateur |
+
+### Événements (`/events`)
+| Action | Méthode | URL | Codes HTTP | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| Recherche | `GET` | `/api/v1/events?q={terme}` | `200` | Recherche des événements |
+| Détails | `GET` | `/api/v1/events/{event_id}` | `200`, `404` | Récupère les détails d'un événement |
+| Création | `POST` | `/api/v1/events` | `201`, `400`, `401` | Crée un nouvel événement (utilisateur connecté) |
+| Modification | `PUT` | `/api/v1/events/{event_id}` | `200`, `400`, `403`, `404` | Modifie un événement (organisateur uniquement) |
+| Suppression | `DELETE` | `/api/v1/events/{event_id}` | `204`, `403`, `404` | Supprime un événement (organisateur uniquement) |
+| Envoyer une invitation | `POST` | `/api/v1/events/{event_id}/invitations` | `201`, `400`, `404` | Invite un utilisateur à l'événement |
+| Supprimer une invitation | `DELETE` | `/api/v1/events/{event_id}/invitations/{invitation_id}` | `204`, `404` | Annule ou supprime une invitation à l'événement |
+
+### Groupes (`/groups`)
+| Action | Méthode | URL | Codes HTTP | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| Recherche | `GET` | `/api/v1/groups?q={terme}` | `200` | Recherche des groupes |
+| Détails | `GET` | `/api/v1/groups/{group_id}` | `200`, `404` | Récupère les détails d'un groupe |
+| Création | `POST` | `/api/v1/groups` | `201`, `400`, `401` | Crée un nouveau groupe |
+| Modification | `PUT` | `/api/v1/groups/{group_id}` | `200`, `400`, `403`, `404` | Modifie un groupe (visibilité, permissions...) |
+| Suppression | `DELETE` | `/api/v1/groups/{group_id}` | `204`, `403`, `404` | Supprime un groupe (admin uniquement) |
+| Liste des membres | `GET` | `/api/v1/groups/{group_id}/members` | `200`, `404` | Liste les utilisateurs membres du groupe |
+| Ajouter / inviter membre | `POST` | `/api/v1/groups/{group_id}/members` | `201`, `400`, `404` | Ajoute ou invite un utilisateur au groupe |
+| Quitter / exclure membre | `DELETE` | `/api/v1/groups/{group_id}/members/{user_id}` | `204`, `404` | Retire un utilisateur du groupe |
+| Événements du groupe | `GET` | `/api/v1/groups/{group_id}/events` | `200`, `404` | Liste les événements créés dans le groupe |
+| Créer événement de groupe | `POST` | `/api/v1/groups/{group_id}/events` | `201`, `400`, `403`, `404` | Crée un événement dans le groupe et invite automatiquement tous les membres |
