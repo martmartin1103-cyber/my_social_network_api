@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from app.database import engine, Base
+from app import models
+from app.routers import users
 
-# Crée automatiquement les tables SQL au démarrage du serveur
+# Crée automatiquement les tables SQL au démarrage
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -9,6 +11,9 @@ app = FastAPI(
     version="1.0.0",
     description="Refonte des API d'un réseau social"
 )
+
+# Branchement du routeur Users
+app.include_router(users.router)
 
 @app.get("/api/health", tags=["Système"])
 def health_check():
