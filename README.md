@@ -18,8 +18,133 @@ TP sur la refonte des API d'un réseau social (type Facebook) visant à amélior
 * **Base de données** : `[ex: PostgreSQL / MySQL / MongoDB]`
 * **Documentation** : Postman
 
+Architecture BDD: 
 ## Installation et lancement
 1. Cloner le dépôt :
    ```bash
    git clone https://github.com/martmartin1103-cyber/my_social_network_api
-   cd my-social-networks-api
+   cd my_social_network_api
+   ```
+
+## Modélisation de la base de données
+
+```mermaid
+erDiagram
+    %% ==========================================
+    %% NOYAU : UTILISATEURS, GROUPES & EVENEMENTS
+    %% ==========================================
+    USERS {
+        INT id PK
+        VARCHAR firstname
+        VARCHAR lastname
+        VARCHAR email UK
+        VARCHAR password_hash
+        VARCHAR avatar_url
+        DATETIME created_at
+    }
+
+    GROUPS {
+        INT id PK
+        VARCHAR name
+        TEXT description
+        VARCHAR icon_url
+        VARCHAR cover_photo_url
+        ENUM type "public, private, secret"
+        BOOLEAN allow_member_posts
+        BOOLEAN allow_member_events
+    }
+
+    GROUP_MEMBERS {
+        INT group_id PK,FK
+        INT user_id PK,FK
+        ENUM role "admin, member"
+        DATETIME joined_at
+    }
+
+    EVENTS {
+        INT id PK
+        INT group_id FK "nullable"
+        VARCHAR name
+        TEXT description
+        DATETIME start_date
+        DATETIME end_date
+        VARCHAR location
+        VARCHAR cover_photo_url
+        ENUM visibility "public, private"
+        BOOLEAN has_shopping_list
+        BOOLEAN has_carpooling
+    }
+
+    EVENT_PARTICIPANTS {
+        INT event_id PK,FK
+        INT user_id PK,FK
+        ENUM role "organizer, participant"
+        ENUM status "invited, accepted, declined"
+    }
+
+    USERS ||--o{ GROUP_MEMBERS : "rejoint"
+    GROUPS ||--|{ GROUP_MEMBERS : "contient"
+    GROUPS |o--o{ EVENTS : "heberge"
+    USERS ||--o{ EVENT_PARTICIPANTS : "participe"
+    EVENTS ||--|{ EVENT_PARTICIPANTS : "inclut"
+
+    %% ==========================================
+    %% INTERACTIONS : DISCUSSIONS, PHOTOS, SONDAGES
+    %% ==========================================
+    THREADS {
+        INT id PK
+        INT group_id FK "nullable (XOR)"
+        INT event_id FK "nullable (XOR)"
+        DATETIME created_at
+    }
+
+    MESSAGES {
+        INT id PK
+        INT thread_id FK
+        INT author_id FK
+        TEXT content
+        DATETIME created_at
+    }
+
+    MESSAGE_COMMENTS {
+        INT id PK
+        INT message_id FK
+        INT author_id FK
+        TEXT content
+        DATETIME created_at
+    }
+
+    GROUPS |o--o{ THREADS : "possede (XOR)"
+    EVENTS |o--o{ THREADS : "possede (XOR)"
+    THREADS ||--o{ MESSAGES : "contient"
+    USERS ||--o{ MESSAGES : "publie"
+    MESSAGES ||--o{ MESSAGE_COMMENTS : "recoit"
+    USERS ||--o{ MESSAGE_COMMENTS : "commente"
+
+    PHOTO_ALBUMS {
+        INT id PK
+        INT event_id FK
+        VARCHAR title
+        DATETIME created_at
+    }
+
+    PHOTOS {
+        INT id PK
+        INT album_id FK
+        INT author_id FK
+        VARCHAR image_url
+        VARCHAR caption
+        DATETIME created_at
+    }
+
+    PHOTO_COMMENTS {
+        INT id PK
+        INT photo_id FK
+        INT author_id FK
+        TEXT content
+        DATETIME created_at
+    }
+
+    EVENTS ||--o{ PHOTO_ALBUMS : "possede"
+    PHOTO_ALBUMS ||--o{ PHOTOS : "contient"
+    USERS ||--o{ PHOTOS : "poste
